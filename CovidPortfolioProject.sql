@@ -1,13 +1,17 @@
+/*
+Covid 19 Data Exploration 
+
+Skills used: Joins, CTE's, Temp Tables, Windows Functions, Aggregate Functions, Creating Views, Converting Data Types
+
+*/
+
 SELECT *
 FROM CovidPortfolioProject..CovidDeaths
 WHERE continent is NOT NULL
 ORDER BY 3,4
 
---SELECT *
---FROM CovidPortfolioProject..CovidDeaths
---ORDER BY 3,4
 
---Select Data to be analysed
+-- Select Data that we are going to be starting with
 
 SELECT location, date, total_cases, new_cases, total_deaths, population
 FROM CovidPortfolioProject..CovidDeaths
@@ -22,8 +26,8 @@ FROM CovidPortfolioProject..CovidDeaths
 WHERE location like 'Zambia'
 ORDER BY 1,2
 
--- Analysing total cases vs population
--- Shows what percentage of population got Covid
+-- Total Cases vs Population
+-- Shows what percentage of population infected with Covid
 
 SELECT location, date, population, total_cases, (total_cases/population)*100 as PercentPopulationInfected
 FROM CovidPortfolioProject..CovidDeaths
@@ -32,7 +36,7 @@ WHERE continent is NOT NULL
 ORDER BY 1,2
 
 
--- Looking at countries with Highest Infection Rate compared to Population
+-- Countries with Highest Infection Rate compared to Population
 
 SELECT location, population, MAX(total_cases) as HighestInfectionCount, MAX((total_cases/population))*100 as PercentPopulationInfected
 FROM CovidPortfolioProject..CovidDeaths
@@ -41,7 +45,7 @@ WHERE continent is NOT NULL
 GROUP BY location, population
 ORDER BY PercentPopulationInfected desc
 
--- Showing countries with Highest Death Count per Population
+-- Countries Highest Death Count per Population
 
 SELECT location, MAX(cast(total_deaths as int)) as TotalDeathCount
 FROM CovidPortfolioProject..CovidDeaths
@@ -51,14 +55,13 @@ GROUP BY location
 ORDER BY TotalDeathCount desc
 
 
--- LET'S BREAK THINGS UP BY CONTINENT
-
+-- BREAKING THINGS DOWN BY CONTINENT
 
 -- Showing continents with Highest Death Count per Population
 
 SELECT continent, MAX(cast(total_deaths as int)) as TotalDeathCount
 FROM CovidPortfolioProject..CovidDeaths
--- WHERE location like 'Botswana'
+-- WHERE location like 'Zambia'
 WHERE continent is NOT NULL
 GROUP BY continent
 ORDER BY TotalDeathCount desc
@@ -74,7 +77,7 @@ WHERE continent is NOT NULL
 GROUP BY date
 ORDER BY 1,2
 
--- Showing global death percentage
+-- Global Death Percentage
 
 SELECT SUM(new_cases) as TotalCases, SUM(cast(new_deaths as int)) as TotalDeaths, SUM(cast(new_deaths as int))/SUM(new_cases)*100 as DeathPercentage
 FROM CovidPortfolioProject..CovidDeaths
@@ -82,7 +85,8 @@ WHERE continent is NOT NULL
 ORDER BY 1,2
 
 
--- Analysing Total Population vs Vaccinations
+-- Total Population vs Vaccinations
+-- Shows Percentage of Population that has recieved at least one Covid Vaccine
 
 SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
 , SUM(CONVERT(int, vac.new_vaccinations)) OVER (PARTITION BY dea.location ORDER BY dea.location, dea.date) as RollingPeopleVaccinated
@@ -93,10 +97,10 @@ JOIN CovidPortfolioProject..CovidVaccinations vac
 WHERE dea.continent IS NOT NULL
 ORDER BY 2,3
 
--- USE CTE
+-- Using CTE to perform Calculation on Partition By in previous query
 
 WITH PopvsVac (continent, location, date, population, new_vaccinations, RollingPeopleVaccinated)
-AS
+as
 (
 SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
 , SUM(CONVERT(int, vac.new_vaccinations)) OVER (PARTITION BY dea.location ORDER BY dea.location, dea.date) as RollingPeopleVaccinated
@@ -110,7 +114,7 @@ SELECT *, (RollingPeopleVaccinated/population)*100
 FROM PopvsVac
 
 
--- TEMP TABLE
+-- Using Temp Table to perform Calculation on Partition By in previous query
 
 DROP TABLE IF EXISTS #PercentPopulationVaccinated
 CREATE TABLE #PercentPopulationVaccinated
